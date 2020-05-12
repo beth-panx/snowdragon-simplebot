@@ -1,3 +1,4 @@
+// const config =  require('../local.settings.json');
 const {
     TurnContext,
     MessageFactory,
@@ -7,6 +8,10 @@ const {
     ActionTypes
 } = require('botbuilder');
 const TextEncoder = require('util').TextEncoder;
+const { CosmosClient } = require("@azure/cosmos");
+const endpoint = process.env.COSMOS_ENDPOINT || config.cosmos.endpoint;
+const key = process.env.COSMOS_KEY || config.cosmos.key;
+const cosmosClient = new CosmosClient({ endpoint, key });
 
 class TeamsConversationBot extends TeamsActivityHandler {
     constructor() {
@@ -24,6 +29,10 @@ class TeamsConversationBot extends TeamsActivityHandler {
                 await this.messageAllMembersAsync(context);
             } else if (text.includes("who")) {
                 await this.getSingleMember(context);
+            } else if (text.includes("🙋🏻‍♀️")) {
+                await this.enqueueQuestion(context);
+            } else if (text.includes("next question")) {
+                await this.dequeueQuestion(context);
             } else {
                 await this.cardActivityAsync(context, false)
             }   
@@ -124,7 +133,8 @@ class TeamsConversationBot extends TeamsActivityHandler {
                 throw e;
             }
         }
-        const message = MessageFactory.text(`You are: ${member.name}`);
+        const message = MessageFactory.text(`You are: ${member.name}.`);
+        console.log('CONTEXT: ', context.activity);
         await context.sendActivity(message);
     }
 
@@ -176,6 +186,87 @@ class TeamsConversationBot extends TeamsActivityHandler {
             members.push(...pagedMembers.members);
         } while (continuationToken !== undefined);
         return members;
+    }
+    
+    async connectDb(teamId) {
+        const { database } = await cosmosClient.databases.createIfNotExists({ id: "QuestionQueue" });
+        const { container } = await database.containers.createIfNotExists({ id: teamId });
+    
+        return { database: database, container: container };
+    }
+
+    async enqueueQuestion(context) {
+        const receivedMsg = context.activity;
+        const teamId = receivedMsg.channelData.team.id;
+        let db = null;
+        let message = '';
+
+        try{
+            db = await this.connectDb(teamId);
+        } catch (err) {
+            console.log(`Error connecting to database: ${err}`);
+        }
+
+        try {
+            await db.container.items.create({message: receivedMsg, status: "unanswered"});
+        } catch (err) {
+            console.log(`Error adding new question in db: ${err}`);
+            throw err;
+        }
+    
+        message = MessageFactory.text(`Your request has been added to a queue. We will notify you when it is your turn to speak. 😎`);
+        // TODO: There are currently x question in the queue. You are y in line.
+        await context.sendActivity(message);
+    }
+
+    async dequeueQuestion(context) {
+        let followupText = 'You have reach the end of the question queue. Yay! 🙌';
+        const receivedMsg = context.activity;
+        const teamId = receivedMsg.channelData.team.id;
+        let db = null;
+        let message = '';
+
+        try{
+            db = await this.connectDb(teamId);
+        } catch (err) {
+            console.log(`Error connecting to database: ${err}`);
+        }
+
+        try {
+            var { resources: questions } = await db.container.items.query("SELECT * from c WHERE c.status='unanswered'").fetchAll();
+        } catch (err) {
+            console.log(`Error getting questions from db: ${err}`);
+            throw err;
+        }
+
+        if (!questions || questions.length == 0) {
+            message = MessageFactory.text(followupText);
+        } else {
+            const currentQuestion = questions.shift();
+            // mark question as answered
+            try{
+                currentQuestion.status = "answered";
+                await db.container.item(currentQuestion.id).replace(currentQuestion);
+            } catch (err) {
+                console.log(`Error marking question as answered in db: ${err}`);
+                throw err;
+            }
+
+            if (currentQuestion) {
+                // replace @mention botname
+                const currentQuestionText = currentQuestion.message.text.replace(/<at[^>]*>(.*?)<\/at> *(&nbsp;)*/, '');
+                const numberQuestionLeft = questions.length;
+
+                if (numberQuestionLeft > 0) {
+                    followupText = 'You have ' + numberQuestionLeft + ' more questions in the queue.';
+                }
+                message = MessageFactory.text(`🤓From: @${currentQuestion.message.from.name}\n\n🦒Question: ${currentQuestionText}\n\n👀${followupText}`);
+                
+            } else {
+                message = MessageFactory.text(followupText);
+            }
+        }
+        await context.sendActivity(message);
     }
 }
 
