@@ -29,7 +29,7 @@ class TeamsConversationBot extends TeamsActivityHandler {
                 await this.messageAllMembersAsync(context);
             } else if (text.includes("who")) {
                 await this.getSingleMember(context);
-            } else if (text.includes("🙋🏻‍♀️")) {
+            } else if (text.includes("QQ")) {
                 await this.enqueueQuestion(context);
             } else if (text.includes("next question")) {
                 await this.dequeueQuestion(context);
