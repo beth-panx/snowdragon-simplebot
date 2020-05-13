@@ -2,7 +2,7 @@
     "name": "snow-dragon-bot",
     "version": "1.0.0",
     "description": "Bot that manages question queue for moderator app",
-    "author": "Microsoft",
+    "author": "Beth Pan",
     "license": "MIT",
     "main": "index.js",
     "scripts": {

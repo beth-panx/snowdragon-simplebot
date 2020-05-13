@@ -1,6 +1,4 @@
-const path = require('path');
-const ENV_FILE = path.join(__dirname, '.env');
-require('dotenv').config({ path: ENV_FILE });
+require('dotenv').config({ path: '.env' });
 const {
     TurnContext,
     MessageFactory,
@@ -11,10 +9,10 @@ const {
 } = require('botbuilder');
 const TextEncoder = require('util').TextEncoder;
 const { CosmosClient } = require("@azure/cosmos");
-const endpoint = process.env.COSMOS_ENDPOINT
-const key = process.env.COSMOS_KEY
-const databaseId = process.env.COSMOS_DATABASEID
-const containerId = process.env.COSMOS_CONTAINERID
+const endpoint = process.env.COSMOS_ENDPOINT;
+const key = process.env.COSMOS_KEY;
+const databaseId = process.env.COSMOS_DATABASEID;
+const containerId = process.env.COSMOS_CONTAINERID;
 const cosmosClient = new CosmosClient({ endpoint, key });
 
 class TeamsConversationBot extends TeamsActivityHandler {
@@ -22,8 +20,10 @@ class TeamsConversationBot extends TeamsActivityHandler {
         super();
         this.onMessage(async (context, next) => {
             TurnContext.removeRecipientMention(context.activity);
-            const text = context.activity.text.trim().toLocaleLowerCase()
+            const text = context.activity.text.trim().toLocaleLowerCase();
             if (text.includes("mention")) {
+                console.log(text);
+                console.log(text.includes("QQ"));
                 await this.mentionActivityAsync(context);
             } else if(text.includes("update")) {
                 await this.cardActivityAsync(context, true);
@@ -33,7 +33,7 @@ class TeamsConversationBot extends TeamsActivityHandler {
                 await this.messageAllMembersAsync(context);
             } else if (text.includes("who")) {
                 await this.getSingleMember(context);
-            } else if (text.includes("QQ")) {
+            } else if (text.includes("qq")) {
                 await this.enqueueQuestion(context);
             } else if (text.includes("next question")) {
                 await this.dequeueQuestion(context);
@@ -62,7 +62,7 @@ class TeamsConversationBot extends TeamsActivityHandler {
                 },
                 {
                     type: ActionTypes.MessageBack,
-                    title: 'Who am I?',
+                    title: 'Who am I yooooooo?',
                     value: null,
                     text: 'whoami'
                 },
@@ -138,7 +138,6 @@ class TeamsConversationBot extends TeamsActivityHandler {
             }
         }
         const message = MessageFactory.text(`You are: ${member.name}.`);
-        console.log('CONTEXT: ', context.activity);
         await context.sendActivity(message);
     }
 
@@ -201,7 +200,6 @@ class TeamsConversationBot extends TeamsActivityHandler {
 
     async enqueueQuestion(context) {
         const receivedMsg = context.activity;
-        const teamId = receivedMsg.channelData.team.id;
         let db = null;
         let message = '';
 
@@ -226,7 +224,6 @@ class TeamsConversationBot extends TeamsActivityHandler {
     async dequeueQuestion(context) {
         let followupText = 'You have reach the end of the question queue. Yay! 🙌';
         const receivedMsg = context.activity;
-        const teamId = receivedMsg.channelData.team.id;
         let db = null;
         let message = '';
 
