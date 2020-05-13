@@ -62,7 +62,7 @@ class TeamsConversationBot extends TeamsActivityHandler {
                 },
                 {
                     type: ActionTypes.MessageBack,
-                    title: 'Who am I yooooooo?',
+                    title: 'Who am I?',
                     value: null,
                     text: 'whoami'
                 },
@@ -255,7 +255,7 @@ class TeamsConversationBot extends TeamsActivityHandler {
 
             if (currentQuestion) {
                 // replace @mention botname
-                const currentQuestionText = currentQuestion.message.text.replace(/<at[^>]*>(.*?)<\/at> *(&nbsp;)*/, '');
+                const currentQuestionText = currentQuestion.message.text.replace(/<at[^>]*>(.*?)<\/at> *(&nbsp;)*QQ */, '');
                 const numberQuestionLeft = questions.length;
 
                 if (numberQuestionLeft > 0) {
