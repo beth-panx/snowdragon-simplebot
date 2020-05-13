@@ -1,4 +1,6 @@
-// const config =  require('../local.settings.json');
+const path = require('path');
+const ENV_FILE = path.join(__dirname, '.env');
+require('dotenv').config({ path: ENV_FILE });
 const {
     TurnContext,
     MessageFactory,
@@ -9,10 +11,10 @@ const {
 } = require('botbuilder');
 const TextEncoder = require('util').TextEncoder;
 const { CosmosClient } = require("@azure/cosmos");
-const endpoint = process.env.COSMOS_ENDPOINT || config.cosmos.endpoint;
-const key = process.env.COSMOS_KEY || config.cosmos.key;
-const databaseId = process.env.COSMOS_DATABASEID || config.cosmos.databaseId;
-const containerId = process.env.COSMOS_CONTAINERID || config.cosmos.containerId;
+const endpoint = process.env.COSMOS_ENDPOINT
+const key = process.env.COSMOS_KEY
+const databaseId = process.env.COSMOS_DATABASEID
+const containerId = process.env.COSMOS_CONTAINERID
 const cosmosClient = new CosmosClient({ endpoint, key });
 
 class TeamsConversationBot extends TeamsActivityHandler {
