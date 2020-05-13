@@ -11,6 +11,8 @@ const TextEncoder = require('util').TextEncoder;
 const { CosmosClient } = require("@azure/cosmos");
 const endpoint = process.env.COSMOS_ENDPOINT || config.cosmos.endpoint;
 const key = process.env.COSMOS_KEY || config.cosmos.key;
+const databaseId = process.env.COSMOS_DATABASEID || config.cosmos.databaseId;
+const containerId = process.env.COSMOS_CONTAINERID || config.cosmos.containerId;
 const cosmosClient = new CosmosClient({ endpoint, key });
 
 class TeamsConversationBot extends TeamsActivityHandler {
@@ -188,9 +190,9 @@ class TeamsConversationBot extends TeamsActivityHandler {
         return members;
     }
     
-    async connectDb(teamId) {
-        const { database } = await cosmosClient.databases.createIfNotExists({ id: "QuestionQueue" });
-        const { container } = await database.containers.createIfNotExists({ id: teamId });
+    async connectDb() {
+        const { database } = await cosmosClient.databases.createIfNotExists({ id: databaseId });
+        const { container } = await database.containers.createIfNotExists({ id: containerId });
     
         return { database: database, container: container };
     }
@@ -202,7 +204,7 @@ class TeamsConversationBot extends TeamsActivityHandler {
         let message = '';
 
         try{
-            db = await this.connectDb(teamId);
+            db = await this.connectDb();
         } catch (err) {
             console.log(`Error connecting to database: ${err}`);
         }
@@ -227,7 +229,7 @@ class TeamsConversationBot extends TeamsActivityHandler {
         let message = '';
 
         try{
-            db = await this.connectDb(teamId);
+            db = await this.connectDb();
         } catch (err) {
             console.log(`Error connecting to database: ${err}`);
         }
